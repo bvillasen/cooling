@@ -33,6 +33,7 @@ def load_hm12_rates( file_name ):
   # Load the HM2012 data extracted from the paper
   table_hm12 = np.loadtxt( file_name ).T
   data_hm12 = {
+  'Info': np.array('Haardt & Madau (2012, ApJ, 746, 125) [Galaxies & Quasars] Cloudy', dtype='|S64'),
   'redshift': table_hm12[0],
   'photoionization':{
     'HI': table_hm12[1],

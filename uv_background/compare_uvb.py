@@ -45,9 +45,9 @@ rates_pw = load_puchwein_rates( file_name )
 z_gk = rates_grackle['redshift']
 z_hm = rates_hm['redshift']
 
-diff_HI = rates_grackle['photoionization']['HI'] / rates_hm['photoionization']['HI']
-
-
+diff_HI = ( rates_grackle['photoionization']['HI']  -  rates_hm['photoionization']['HI'] ) / rates_hm['photoionization']['HI']
+diff_HI = ( rates_grackle['photoionization']['HeI']  -  rates_hm['photoionization']['HeI'] ) / rates_hm['photoionization']['HeI']
+diff_HeII = ( rates_grackle['photoionization']['HeII']  -  rates_hm['photoionization']['HeII'] ) / rates_hm['photoionization']['HeII']
 
 #Plot Heating and Ionizatiosnates
 nrows=1

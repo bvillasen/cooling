@@ -11,6 +11,8 @@ def load_grackle_rates( fileName ):
   # Redshift
   z = file_gk['UVBRates']['z'][...] 
   
+  info = file_gk['UVBRates']['Info'][...]
+  
   # Photoionization Reactions
   # k24:   HI    + p   -> HII   + e
   # k25:   HeII  + p   -> HeIII + e
@@ -25,6 +27,7 @@ def load_grackle_rates( fileName ):
   heat_rate_HeII = file_gk['UVBRates']['Photoheating']['piHeII'][...]
 
   rates = {}
+  rates['Info'] = info
   rates['redshift'] = z
   rates['photoheating'] = {}
   rates['photoheating']['HI'] = heat_rate_HI
@@ -32,9 +35,9 @@ def load_grackle_rates( fileName ):
   rates['photoheating']['HeII'] = heat_rate_HeII
 
   rates['photoionization'] = {}
-  rates['photoionization']['HI'] = heat_rate_HI
-  rates['photoionization']['HeI'] = heat_rate_HeI
-  rates['photoionization']['HeII'] = heat_rate_HeII
+  rates['photoionization']['HI'] = ion_rate_HI
+  rates['photoionization']['HeI'] = ion_rate_HeI
+  rates['photoionization']['HeII'] = ion_rate_HeII
   return rates
 
 
@@ -84,3 +87,46 @@ def get_grackle_table( key, fileName, type='Primordial' ):
   table = rates_primordial[key_grackle][...]
   file.close()
   return dens_vals, redshift_vals, temp_vals, table
+
+
+def load_grackle_dataset( file_name ):
+  file =   file = h5.File( file_name, 'r' )
+  data = {}
+
+  rates = load_grackle_rates( file_name )
+  data['UVBRates'] = {}
+  data['UVBRates']['Info'] = rates['Info']
+  data['UVBRates']['z'] = rates['redshift']
+  data['UVBRates']['Photoheating'] = {}
+  data['UVBRates']['Photoheating']['piHI'] = rates['photoheating']['HI']
+  data['UVBRates']['Photoheating']['piHeI'] = rates['photoheating']['HeI']
+  data['UVBRates']['Photoheating']['piHeII'] = rates['photoheating']['HeII']
+  data['UVBRates']['Chemistry'] = {}
+  data['UVBRates']['Chemistry']['k24'] = rates['photoionization']['HI'] 
+  data['UVBRates']['Chemistry']['k25'] = rates['photoionization']['HeII']
+  data['UVBRates']['Chemistry']['k26'] = rates['photoionization']['HeI'] 
+
+  keys_grackle = {'cooling_rate': 'Cooling', 'heating_rate': 'Heating', 'mean_molecular_weight': 'MMW'}
+
+  data['CoolingRates'] = {}
+  for type in [ 'Primordial', 'Metals' ]:
+    data['CoolingRates'][type] = {}
+    keys = [ 'cooling_rate', 'heating_rate', 'mean_molecular_weight']
+    if type == 'Metals': keys = [ 'cooling_rate', 'heating_rate' ]
+    for key in keys:
+      dens_vals, redshift_vals, temp_vals, table = get_grackle_table( key, file_name, type )
+      n_dens, n_redshift, n_temp = len(dens_vals), len(redshift_vals), len(temp_vals),
+      key_grackle = keys_grackle[key]
+      data['CoolingRates'][type][key_grackle] = {} 
+      data['CoolingRates'][type][key_grackle]['data'] = table
+      data['CoolingRates'][type][key_grackle]['Rank'] = 3
+      data['CoolingRates'][type][key_grackle]['Dimension'] = np.array([n_dens, n_redshift, n_temp])
+      data['CoolingRates'][type][key_grackle]['Parameter1'] = dens_vals
+      data['CoolingRates'][type][key_grackle]['Parameter1_Name'] = 'hden'
+      data['CoolingRates'][type][key_grackle]['Parameter2'] = redshift_vals
+      data['CoolingRates'][type][key_grackle]['Parameter2_Name'] = 'redshift'
+      data['CoolingRates'][type][key_grackle]['Temperature'] = temp_vals
+    
+  return data
+
+

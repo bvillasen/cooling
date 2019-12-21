@@ -31,6 +31,14 @@ def parse_line( line ):
       factor = -1
       element = element[1:]
     element = element.split('-')
+    if len(element) == 3:
+      # print element
+      val_1 = np.float( element[0])
+      val_2 = np.float( element[1])
+      val_3 = np.float( element[2])
+      data_line.append( factor * val_1 )
+      data_line.append( -1 * val_2 )
+      data_line.append( -1 * val_3 )
     if len(element) == 2:
       val_1 = np.float( element[0])
       val_2 = np.float( element[1])
@@ -62,7 +70,8 @@ def Load_Ionization_File( ionization_file, print_out=True ):
       if print_out: print line
       data_He = parse_line(line)
       HeI = data_He[0]
-      HeII = data_He[1]
+      if len(data_He) > 1: HeII = data_He[1]
+      else: HeII = -30.0
       if len(data_He) > 2: HeIII = data_He[2]
       else: HeIII = -30.0
       data['HeI'] = HeI

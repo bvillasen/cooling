@@ -13,16 +13,14 @@ figures_dir = root_dir + '/figures/'
 sys.path.extend([ tools_dir, cloudy_tools_dir ] )
 from tools import create_directory
 from load_cloudy_output import *
+from load_grackle_output import *
 
-
-inDir = '/home/bruno/Desktop/Dropbox/Developer/cloudy_cooling_tools/outputs/cooling_uvHM_metals_off_test/'
-inDir_metals = '/home/bruno/Desktop/Dropbox/Developer/cloudy_cooling_tools/outputs/cooling_uvHM_metals_on/'
-outDir = figures_dir + 'uvHM_metals_off_test/'
+# inDir = '/home/bruno/Desktop/Dropbox/Developer/cloudy_cooling_tools/outputs/cooling_uvHM_metals_off_test/'
+# inDir_metals = '/home/bruno/Desktop/Dropbox/Developer/cloudy_cooling_tools/outputs/cooling_uvHM_metals_on/'
+inDir = '/home/bruno/Desktop/Dropbox/Developer/cooling_tools/cloudy_tools/primordial_uv_z=0/'
+outDir = figures_dir + 'uvHM_primordial_cloudy_z=0/'
 name_base = 'cooling_run'
 create_directory( outDir )
-
-#Load the run density and redshift values
-run_values = get_run_values( inDir, name_base )
 
 
 type = 'Primordial'
@@ -32,23 +30,24 @@ if type == 'Primordial': data_keys = [ 'cooling_rate', 'heating_rate', 'mean_mol
 if type == 'Metals': data_keys = [ 'cooling_rate', 'heating_rate', ]
 
 
+run_values = get_run_values( inDir, file_name='run_values.dat' )
 
+# data_cloudy = {}
+# for key in data_keys:
+#   dens_vals, redshift_vals, temp_vals, table =  get_cloudy_table( run_values, key,  inDir, )
+#   data_cloudy['density'] = dens_vals
+#   data_cloudy['redshift'] = redshift_vals
+#   data_cloudy['temperature'] = temp_vals
+#   data_cloudy[key] = table
+# 
+# data_cloudy_metals = {}
+# for key in data_keys:
+#   dens_vals, redshift_vals, temp_vals, table =  get_cloudy_table( run_values, key, name_base, inDir_metals )
+#   data_cloudy_metals['density'] = dens_vals
+#   data_cloudy_metals['redshift'] = redshift_vals
+#   data_cloudy_metals['temperature'] = temp_vals
+#   data_cloudy_metals[key] = table
 
-data_cloudy = {}
-for key in data_keys:
-  dens_vals, redshift_vals, temp_vals, table =  get_cloudy_table( run_values, key, name_base, inDir )
-  data_cloudy['density'] = dens_vals
-  data_cloudy['redshift'] = redshift_vals
-  data_cloudy['temperature'] = temp_vals
-  data_cloudy[key] = table
-
-data_cloudy_metals = {}
-for key in data_keys:
-  dens_vals, redshift_vals, temp_vals, table =  get_cloudy_table( run_values, key, name_base, inDir_metals )
-  data_cloudy_metals['density'] = dens_vals
-  data_cloudy_metals['redshift'] = redshift_vals
-  data_cloudy_metals['temperature'] = temp_vals
-  data_cloudy_metals[key] = table
 
 
 fileName = 'data/CloudyData_UVB=HM2012.h5'
@@ -60,9 +59,10 @@ for key in data_keys:
   data_grackle['temperature'] = temp_vals
   data_grackle[key] = table
 
+data_cloudy = data_grackle
 
 # indx_redshift = 0
-n_redshift = 25
+n_redshift = 1
 for indx_redshift in range(n_redshift):
   # print indx_redshift
 
@@ -84,7 +84,7 @@ for indx_redshift in range(n_redshift):
     temp_vals_gk = data_grackle['temperature']
     
     if ( np.abs( dens_vals_gk - dens_vals_cl ) > 1e-6 ).any(): print 'Error: density mismatch'
-    if ( np.abs( temp_vals_gk - temp_vals_cl ) > 1e-6 ).any(): print 'Error: temperature mismatch'
+    if ( np.abs( temp_vals_gk - temp_vals_cl ) / temp_vals_gk > 1e-6 ).any(): print 'Error: temperature mismatch'
     
     temp_log = np.log10( temp_vals_cl )
     

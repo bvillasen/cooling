@@ -3,6 +3,7 @@ from subprocess import call
 import numpy as np
 from mpi4py import MPI
 
+
 cool_dir = os.path.dirname(os.getcwd()) + '/'
 cloudy_dir = cool_dir + 'cloudy/'
 uvb_dir = cool_dir + 'uv_background/'
@@ -19,19 +20,35 @@ nprocs = comm.Get_size()
 
 print_out = False
 
-# composition_parameters = composition_metals_off
-composition_parameters = [ 'no molecules' ]
+type = 'primordial'
+# type = 'metals'
 
-work_directory = '/home/bruno/Desktop/Dropbox/Developer/cooling_tools/cloudy_tools/data/uv_HM12_metals/'
+uvb_name = 'HM12'
+# uvb_name = 'Puchwein18'
+
+
+if rank == 0:
+  print "Type: {0}".format( type )
+  print "UVB: {0}".format( uvb_name)
+comm.Barrier()
+time.sleep(2)
+
+if type == 'primordial': composition_parameters = composition_metals_off
+if type == 'metals': composition_parameters = [ 'no molecules' ]
+
+
+work_directory = '/home/bruno/Desktop/Dropbox/Developer/cooling_tools/cloudy_tools/data/uv_{0}_{1}/'.format(uvb_name, type )
 if rank == 0: print "Work Directory: ", work_directory
 if rank == 0: create_directory(work_directory, print_out=print_out)
 # os.chdir( work_directory )
 output_dir = work_directory 
 if rank == 0: create_directory(output_dir, print_out=print_out)
 comm.Barrier()
+time.sleep(2)
 
+# cloudy_command = cloudy_dir + 'source/cloudy.exe_shamrock'
+cloudy_command = cloudy_dir + 'source/cloudy.exe_shamrock_puchwein'
 
-cloudy_command = cloudy_dir + 'source/cloudy.exe_shamrock'
   
   
 run_temp_vals = np.logspace( 1, 9, 161 )
@@ -41,7 +58,7 @@ run_hden_vals = np.linspace(-10, 4, 29)
 # run_redshift_vals = np.array([  0. ])
 run_redshift_vals = np.array([  0.,  0.12202,  0.25893,  0.41254,  0.58489,  0.77828,  0.99526,
   1.2387,   1.5119,   1.8184,  2.1623,   2.5481,  2.9811,   3.4668,   4.0119,   4.6234,   5.3096,
-  6.0795,    6.9433,   7.9125,   9.,      10.22,    11.589,   13.125,    14.849,   14.849, ])
+  6.0795,    6.9433,   7.9125,   9.,      10.22,    11.589,   13.125,    14.849,   14.8491, ])
   
 def get_run_values( run_hden_vals, run_redshift_vals ):  
   n_run = 0
@@ -56,6 +73,13 @@ def get_run_values( run_hden_vals, run_redshift_vals ):
   
 n_runs, run_vals = get_run_values( run_hden_vals, run_redshift_vals )
 
+if rank == 0:
+  print "N dens: {0}".format( len(run_hden_vals) )
+  print "N redshift: {0}".format( len(run_redshift_vals) )
+  print "N temperature: {0}".format( len(run_temp_vals) )
+  print "N runs: {0}".format(n_runs)
+comm.Barrier()
+time.sleep(2)
 
 
 n_proc_runs = (n_runs-1)/nprocs + 1
@@ -66,6 +90,8 @@ proc_runs = proc_runs[ proc_runs < n_runs ]
 if len(proc_runs) == 0: exit()
 
 print "pID: {0}:  {1}".format( rank, proc_runs)
+comm.Barrier()
+time.sleep(2)
 
 
 if rank == 0:
@@ -82,9 +108,18 @@ if rank == 0:
 
 for n_run in proc_runs:
 
+  redshift_last = False
   hden = run_vals[n_run]['hden']
+  hden_to_cloudy = hden
+  
   redshift = run_vals[n_run]['redshift']
-
+  if redshift == run_redshift_vals[-1]: redshift_last = True
+  
+  if redshift_last: hden_to_cloudy = 5.0 #Set Large Density for Primordial cooling only
+  
+  # if not redshift_last: continue
+  # print n_run
+  
   run_cooling_rates = []
   run_heating_rates = []
   run_mmw = []
@@ -100,10 +135,22 @@ for n_run in proc_runs:
     run_parameters = [
     'stop zone 1',
     'iterate to convergence',
-    'hden {0}'.format(hden),
+    'hden {0}'.format(hden_to_cloudy),
     'constant temperature T = {0:.6e} linear'.format(T),
-    'table HM12 redshift {0}'.format(redshift)
     ]
+    
+    if uvb_name == 'HM12':
+      uvb_parameters = [
+      'table HM12 redshift {0}'.format(redshift)
+      ]
+    
+    if uvb_name == 'Puchwein18':
+      uvb_parameters = [
+      'table Puchwein18 redshift {0}'.format(redshift)
+      ]
+    
+    
+    if redshift_last: uvb_parameters = []
     
     output_parameters = [
     'punch last cooling file = "{0}/{1}_run{2}.cooling.temp"'.format(output_directory, run_base_name, n_run),
@@ -113,6 +160,7 @@ for n_run in proc_runs:
     'punch last physical conditions file = "{0}/{1}_run{2}.physical.temp"'.format(output_directory, run_base_name, n_run)
     ]
     
+    run_parameters.extend( uvb_parameters )
     run_parameters.extend( composition_parameters  )
     run_parameters.extend( output_parameters  )
     simulation_parameters = run_parameters
@@ -141,9 +189,11 @@ for n_run in proc_runs:
     cooling_rate = data_cooling['Ctot erg/cm3/s']
     heating_rate = data_cooling['Htot erg/cm3/s']
 
-    cooling_factor = (10**hden)**2
+    cooling_factor = (10**hden_to_cloudy)**2
     cooling_rate /= cooling_factor
     heating_rate /= cooling_factor
+    
+    if redshift_last: heating_rate = 0 #set the heating rate to zero if no uvb
 
     run_cooling_rates.append( cooling_rate )
     run_heating_rates.append( heating_rate )

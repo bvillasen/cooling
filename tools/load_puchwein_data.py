@@ -19,10 +19,12 @@ def load_puchwein_spectrum( file_name ):
       #Load the spectrum
       data.append( np.array( line, dtype=np.float ) )
     counter += 1
-      
+  
   data = np.array( data )  
   lambda_data = data[:,0]
   J_data = data[:,1:]
+  # print len(redshift_data)
+  # print len(lambda_data)
   return redshift_data, lambda_data, J_data
   
 def load_puchwein_rates( file_name ):
