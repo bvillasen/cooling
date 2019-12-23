@@ -31,7 +31,7 @@ keys_grackle = {'cooling_rate': 'Cooling', 'heating_rate': 'Heating', 'mean_mole
 
 inDir_cloudy_primordial = '../cloudy_tools/data/uv_HM12_primordial/'
 inDir_cloudy_metals = '../cloudy_tools/data/uv_HM12_metals/'
-data_cloudy = load_cloudy_CoolingRates( inDir_cloudy_primordial, inDir_cloudy_metals )
+data_cloudy = load_cloudy_CoolingRates( inDir_cloudy_primordial, inDir_cloudy_primordial )
 
 #Load UVBRates
 file_name = 'data/hm12.dat'
@@ -46,8 +46,8 @@ data_grackle = load_grackle_dataset( file_name )
 
 # indx_redshift = 0
 n_redshift = 26
-# for indx_redshift in range(n_redshift):
-for indx_redshift in [25]:
+for indx_redshift in range(n_redshift):
+# for indx_redshift in [25]:
   # print indx_redshift
 
   #Plot tables 
@@ -75,7 +75,7 @@ for indx_redshift in [25]:
 
     z_cl = redshift_vals_cl[indx_redshift]
     z_gk = redshift_vals_gk[indx_redshift]
-    if ( np.abs( z_gk - z_cl ) > 1e-6 ).any(): print 'Error: redshift mismatch'
+    if ( np.abs( z_gk - z_cl ) > 1e-6 ).any(): print 'Error: redshift mismatch new'
     if i==0: print "\nIndex: {1}  z = {0:.2f}".format(z_cl, indx_redshift)
 # 
 

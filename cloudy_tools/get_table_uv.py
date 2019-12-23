@@ -1,7 +1,8 @@
-import sys, os, time
+import sys, os, time, shutil
 from subprocess import call
 import numpy as np
 from mpi4py import MPI
+from subprocess import Popen
 
 
 cool_dir = os.path.dirname(os.getcwd()) + '/'
@@ -37,7 +38,8 @@ if type == 'primordial': composition_parameters = composition_metals_off
 if type == 'metals': composition_parameters = [ 'no molecules' ]
 
 
-work_directory = '/home/bruno/Desktop/Dropbox/Developer/cooling_tools/cloudy_tools/data/uv_{0}_{1}/'.format(uvb_name, type )
+# work_directory = '/home/bruno/Desktop/Dropbox/Developer/cooling_tools/cloudy_tools/data/uv_{0}_{1}/'.format(uvb_name, type )
+work_directory = '/data/groups/comp-astro/bruno/cooling_tools/cloudy_tools/data/uv_{0}_{1}_lux/'.format(uvb_name, type )
 if rank == 0: print "Work Directory: ", work_directory
 if rank == 0: create_directory(work_directory, print_out=print_out)
 # os.chdir( work_directory )
@@ -47,7 +49,8 @@ comm.Barrier()
 time.sleep(2)
 
 # cloudy_command = cloudy_dir + 'source/cloudy.exe_shamrock'
-cloudy_command = cloudy_dir + 'source/cloudy.exe_shamrock_puchwein'
+# cloudy_command = cloudy_dir + 'source/cloudy.exe_shamrock_puchwein'
+cloudy_command = cloudy_dir + 'source/cloudy.exe_lux'
 
   
   
@@ -126,9 +129,27 @@ for n_run in proc_runs:
 
   print 'Satarting Run : ', n_run
   
-  output_directory = output_dir + 'run_{0}/'.format( n_run )
-  create_directory( output_directory, print_out=print_out )  
+  run_directory = output_dir + 'run_{0}/'.format( n_run )
+  create_directory( run_directory, print_out=print_out )  
+  
+  # Check if the run_file already exixts
+  run_file = run_directory + 'output.dat'
+  if os.path.exists( run_file ): 
+    print " Run exists"
+    continue
+    
+  #Change directory to output_dir
+  os.chdir( run_directory )
+  run_directory = ''
+    
+  #Copy Cloudy executable to run directory
+  cloudy_command_local = 'cloudy.exe'
+  # shutil.copyfile( cloudy_command, cloudy_command_local )
+  p = Popen(['cp','-p','--preserve',  cloudy_command, cloudy_command_local])
+  p.wait()
 
+  
+  # exit()
   for T in run_temp_vals:
     if print_out: print ' T = {0:.3e}'.format( T )
 
@@ -153,11 +174,11 @@ for n_run in proc_runs:
     if redshift_last: uvb_parameters = []
     
     output_parameters = [
-    'punch last cooling file = "{0}/{1}_run{2}.cooling.temp"'.format(output_directory, run_base_name, n_run),
-    'punch last heating file = "{0}/{1}_run{2}.heating.temp"'.format(output_directory, run_base_name, n_run),
-    'punch last abundance file = "{0}/{1}_run{2}.abundance.temp"'.format(output_directory, run_base_name, n_run),
-    'punch last ionization means file = "{0}/{1}_run{2}.ionization.temp"'.format(output_directory, run_base_name, n_run),
-    'punch last physical conditions file = "{0}/{1}_run{2}.physical.temp"'.format(output_directory, run_base_name, n_run)
+    'punch last cooling file = "{0}{1}_run{2}.cooling.temp"'.format(run_directory, run_base_name, n_run),
+    'punch last heating file = "{0}{1}_run{2}.heating.temp"'.format(run_directory, run_base_name, n_run),
+    'punch last abundance file = "{0}{1}_run{2}.abundance.temp"'.format(run_directory, run_base_name, n_run),
+    'punch last ionization means file = "{0}{1}_run{2}.ionization.temp"'.format(run_directory, run_base_name, n_run),
+    'punch last physical conditions file = "{0}{1}_run{2}.physical.temp"'.format(run_directory, run_base_name, n_run)
     ]
     
     run_parameters.extend( uvb_parameters )
@@ -166,13 +187,13 @@ for n_run in proc_runs:
     simulation_parameters = run_parameters
 
     # Write the Cloudy parameter file
-    parameter_file =  output_directory + 'params.txt'
+    parameter_file =  run_directory + 'params.txt'
     write_parameter_file( simulation_parameters,  parameter_file )
 
     if print_out: print ' Saved Parameter File: ', parameter_file 
 
     #Set Cloudy output file
-    output_file =  output_directory + 'output.txt'
+    output_file =  run_directory + 'output.txt'
 
     start = time.time()
     command = '{0} <{1}> {2}'.format( cloudy_command, parameter_file, output_file) 
@@ -180,7 +201,7 @@ for n_run in proc_runs:
     call( command , shell=True)
     if print_out: print "Time: ", time.time() - start
 
-    cooling_file = output_directory + '{0}_run{1}.cooling.temp'.format(run_base_name, n_run)
+    cooling_file = run_directory + '{0}_run{1}.cooling.temp'.format(run_base_name, n_run)
     data_cooling = Load_Cooling_File( cooling_file , print_out=print_out )
 
     temp = data_cooling['Temp K']
@@ -198,21 +219,29 @@ for n_run in proc_runs:
     run_cooling_rates.append( cooling_rate )
     run_heating_rates.append( heating_rate )
 
-    ionization_file = output_directory + '{0}_run{1}.ionization.temp'.format(run_base_name, n_run)
+    ionization_file = run_directory + '{0}_run{1}.ionization.temp'.format(run_base_name, n_run)
     ionization_frac = Load_Ionization_File( ionization_file, print_out=print_out )
     n_H = 1.0
     n_He = 0.1*n_H
     mu = Get_Mean_Molecular_Weight( n_H, n_He, ionization_frac, print_out=print_out )
     run_mmw.append(mu)
+    
+    #delete temporal files
+    command = 'rm {0}*.temp {0}output.txt {0}params.txt '.format( run_directory ) 
+    call( command , shell=True)
+    
+  
+  # Delete Cloudy command
+  command = 'rm {0} '.format( cloudy_command_local ) 
+  call( command , shell=True)
 
-
-
+  # Write the run data
   data_header = ' hden {0:.3} \n'.format( hden )
   data_header += ' redshift {0:.5} \n'.format( redshift )
   data_header += ' Temp Cooling_Rate Heating_Rate MMW'
   data = np.array([ run_temp_vals, np.array(run_cooling_rates), np.array(run_heating_rates) , np.array(run_mmw) ] ).T
-  np.savetxt( output_directory + 'output.dat', data, header=data_header )
-  print ' Saved run data: ', output_directory + 'output.dat'
+  np.savetxt( run_file, data, header=data_header )
+  print ' Saved run data: ', run_file
 
 
 

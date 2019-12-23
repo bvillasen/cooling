@@ -58,7 +58,7 @@ def Load_Run_Data( n_run, work_directory, run_vals ):
     if i==1: file_redshift = np.float(line[2])
   file.close()
   if file_dens != run_dens: print 'ERROR: density mismatch: {0}   {1}'.format(file_dens, run_dens)  
-  if file_redshift != run_redshift: print 'ERROR: redshift mismatch' 
+  if file_redshift != run_redshift: print 'ERROR: redshift mismatch: {0}   {1}'.format(file_redshift, run_redshift)  
   data = np.loadtxt( file_name ).T
   temp = data[0]
   cooling_rate = data[1]
