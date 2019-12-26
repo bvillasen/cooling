@@ -16,12 +16,15 @@ from load_cloudy_output import *
 from load_grackle_output import *
 from load_hm12_data import *
 
-outDir = figures_dir + 'uvHM_primordial_cloudy/'
-create_directory( outDir )
-
 
 type = 'Primordial'
 # type = 'Metals'
+
+uvb = 'Puchwein18'
+# uvb = 'HM12'
+
+outDir = figures_dir + 'uv_{0}_{1}_cloudy_lux/'.format(uvb, type)
+create_directory( outDir )
 
 if type == 'Primordial': data_keys = [ 'cooling_rate', 'heating_rate', 'mean_molecular_weight']
 if type == 'Metals': data_keys = [ 'cooling_rate', 'heating_rate', ]
@@ -29,9 +32,9 @@ if type == 'Metals': data_keys = [ 'cooling_rate', 'heating_rate', ]
 keys_grackle = {'cooling_rate': 'Cooling', 'heating_rate': 'Heating', 'mean_molecular_weight': 'MMW'}
 
 
-inDir_cloudy_primordial = '../cloudy_tools/data/uv_HM12_primordial/'
-inDir_cloudy_metals = '../cloudy_tools/data/uv_HM12_metals/'
-data_cloudy = load_cloudy_CoolingRates( inDir_cloudy_primordial, inDir_cloudy_primordial )
+inDir_cloudy_primordial = '../cloudy_tools/data/uv_{0}_primordial_lux/'.format(uvb)
+inDir_cloudy_metals = '../cloudy_tools/data/uv_{0}_metals_lux/'.format(uvb)
+data_cloudy = load_cloudy_CoolingRates( inDir_cloudy_primordial, inDir_cloudy_metals )
 
 #Load UVBRates
 file_name = 'data/hm12.dat'
@@ -94,7 +97,7 @@ for indx_redshift in range(n_redshift):
 
     data_min = min( data_cl.min(), data_gk.min() )
     data_max = max( data_cl.max(), data_gk.max() )  
-    print data_min, data_max
+    # print data_min, data_max
 
     if key == 'mean_molecular_weight':
       print "MMW: "

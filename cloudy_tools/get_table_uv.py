@@ -21,8 +21,8 @@ nprocs = comm.Get_size()
 
 print_out = False
 
-type = 'primordial'
-# type = 'metals'
+# type = 'primordial'
+type = 'metals'
 
 uvb_name = 'HM12'
 # uvb_name = 'Puchwein18'
@@ -142,7 +142,7 @@ for n_run in proc_runs:
   os.chdir( run_directory )
   run_directory = ''
     
-  #Copy Cloudy executable to run directory
+  #Copy Cloudy executable to run localy
   cloudy_command_local = 'cloudy.exe'
   # shutil.copyfile( cloudy_command, cloudy_command_local )
   p = Popen(['cp','-p','--preserve',  cloudy_command, cloudy_command_local])
@@ -160,16 +160,16 @@ for n_run in proc_runs:
     'constant temperature T = {0:.6e} linear'.format(T),
     ]
     
-    if uvb_name == 'HM12':
-      uvb_parameters = [
-      'table HM12 redshift {0}'.format(redshift)
-      ]
-    
-    if uvb_name == 'Puchwein18':
-      uvb_parameters = [
-      'table Puchwein18 redshift {0}'.format(redshift)
-      ]
-    
+    # if uvb_name == 'HM12':
+    uvb_parameters = [
+    'table HM12 redshift {0}'.format(redshift)
+    ]
+    # 
+    # if uvb_name == 'Puchwein18':
+    #   uvb_parameters = [
+    #   'table Puchwein18 redshift {0}'.format(redshift)
+    #   ]
+    # 
     
     if redshift_last: uvb_parameters = []
     

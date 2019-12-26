@@ -156,6 +156,7 @@ def load_cloudy_CoolingRates( indir_primordial, indir_metals, ):
     data_primordial = data['CoolingRates']['Primordial'][key_grackle]['data']
     data_metals = data['CoolingRates']['Metals'][key_grackle]['data']
     data_diff = data_metals - data_primordial
+    print data_diff.min(),  data_diff.max()
     data_diff[data_diff<0] = 1e-30
     data['CoolingRates']['Metals'][key_grackle]['data'] = data_diff
 

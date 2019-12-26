@@ -14,45 +14,48 @@ from load_puchwein_data import *
 from load_hm12_data import *
 
 
-inDir_cloudy_primordial = '../cloudy_tools/data/uv_HM12_primordial/'
-inDir_cloudy_metals = '../cloudy_tools/data/uv_HM12_metals/'
-data_cloudy = load_cloudy_CoolingRates( inDir_cloudy_primordial, inDir_cloudy_metals )
+inDir_cloudy_primordial = '../cloudy_tools/data/uv_HM12_primordial_lux/'
+inDir_cloudy_metals = '../cloudy_tools/data/uv_HM12_metals_lux/'
+data_cl = load_cloudy_CoolingRates( inDir_cloudy_primordial, inDir_cloudy_metals )
 
 #Load UVBRates
 file_name = 'data/hm12.dat'
 rates_hm12 = load_hm12_rates( file_name )
-data_cloudy = Add_UVBRates( data_cloudy, rates_hm12 )
+data_cl = Add_UVBRates( data_cl, rates_hm12 )
 
 #Load Gracke Data
 file_name = 'data/CloudyData_UVB=HM2012.h5'
 data_gk = load_grackle_dataset( file_name )
-# 
-# 
-# types = ['Primordial', 'Metals']
-# 
-# #Set the output file
-# file_name_out = 'data/my_grackle_files/CloudyData_UVB=HM2012_bruno.h5'
-# file_out = h5.File( file_name_out, 'w' )
-# 
-# # Add Cooling Rate
-# root_name = 'CoolingRates'
-# print root_name
-# group_root = file_out.create_group( root_name )
-# for type in types:
-#   print ' ' + type
-#   group_gk = data_gk[root_name][type]
-#   group_out = group_root.create_group(type)
-#   keys = group_gk.keys()
-#   for key in keys:
-#     print '  ' + key
-#     data_set_gk = group_gk[key]
-#     table_gk = data_set_gk['data']
-#     data_set = group_out.create_dataset( key, data=table_gk )
-#     attrs = data_set_gk.keys()
-#     for attr_key in attrs:
-#       if attr_key == 'data': continue
-#       print attr_key
-#       data_set.attrs[attr_key] = data_set_gk[attr_key]
+
+
+types = ['Primordial', 'Metals']
+
+#Set the output file
+file_name_out = 'data/my_grackle_files/CloudyData_UVB=HM2012_cloudy.h5'
+file_out = h5.File( file_name_out, 'w' )
+
+# Add Cooling Rate
+root_name = 'CoolingRates'
+print root_name
+group_root = file_out.create_group( root_name )
+for type in types:
+  print ' ' + type
+  group_gk = data_gk[root_name][type]
+  group_cl = data_cl[root_name][type]
+  group_out = group_root.create_group(type)
+  keys = group_gk.keys()
+  for key in keys:
+    print '  ' + key
+    data_set_gk = group_gk[key]
+    table_gk = data_set_gk['data']    
+    data_set_cl = group_cl[key]
+    table_cl = data_set_cl['data']
+    data_set = group_out.create_dataset( key, data=table_cl )
+    attrs = data_set_gk.keys()
+    for attr_key in attrs:
+      if attr_key == 'data': continue
+      print attr_key
+      data_set.attrs[attr_key] = data_set_cl[attr_key]
 # 
 # # Add UVBRates
 # 
